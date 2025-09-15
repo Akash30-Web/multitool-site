@@ -1,0 +1,34 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Background Remover - QuickTools Hub</title><meta name="description" content="Remove near-white backgrounds client-side. Works best with simple backgrounds."/><link rel="stylesheet" href="../css/style.css"/><link rel="icon" href="../assets/favicon.png"/></head><body><header class="header"><a class="brand" href="/"><span class="logo"></span><strong>QuickTools Hub</strong></a><a class="home-btn" href="/">Home</a></header><main class="container"><div class="tool-area"><h1>Background Remover (improved)</h1><p class="small">This improved remover makes white/near-white pixels transparent using a configurable tolerance. Works best on photos with simple backgrounds.</p><div class="upload" id="br_drop">Click or drag image<input type="file" id="br_file" accept="image/*" style="display:none"/></div><div style="margin-top:8px">Tolerance (0-255): <input id="br_thresh" type="range" min="0" max="255" value="240"/> <button id="br_do" class="home-btn" disabled>Remove Background</button></div><div id="br_ba" style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap"></div></div></main><footer class="footer"><div>© 2025 QuickTools Hub</div></footer><script src="../js/common.js"></script><script>
+const br_drop=document.getElementById('br_drop'), br_file=document.getElementById('br_file'), br_do=document.getElementById('br_do'), br_ba=document.getElementById('br_ba');
+br_drop.addEventListener('click', ()=>br_file.click());
+br_file.addEventListener('change', ()=>{ br_do.disabled = !br_file.files.length; if(br_file.files.length){ readFileAsDataURL(br_file.files[0]).then(d=> br_ba.innerHTML = `<div style="flex:1"><strong>Before</strong><img class="preview" src="${d}" style="max-width:320px"/></div>`); } });
+br_do.addEventListener('click', async ()=>{
+  const f = br_file.files[0]; if(!f) return;
+  br_do.disabled=true; br_do.textContent='Working...';
+  const base = await readFileAsDataURL(f);
+  const img = new Image(); img.src = base;
+  await new Promise(r=>img.onload=r);
+  // scale down if very large to avoid memory issues (but keep original for download)
+  const maxDim = 2000;
+  let w = img.width, h = img.height;
+  const scale = Math.min(1, maxDim/Math.max(w,h));
+  if(scale<1){ w = Math.round(img.width*scale); h = Math.round(img.height*scale); }
+  const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+  const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+  const tol = parseInt(document.getElementById('br_thresh').value,10) || 240;
+  // compute using distance from white in RGB space to preserve non-white close pixels
+  for(let i=0;i<imgData.data.length;i+=4){
+    const r = imgData.data[i], g = imgData.data[i+1], b = imgData.data[i+2];
+    const dist = Math.sqrt((255-r)*(255-r) + (255-g)*(255-g) + (255-b)*(255-b));
+    if(dist < (255 - tol)) { imgData.data[i+3] = 0; } // make transparent
+  }
+  ctx.putImageData(imgData,0,0);
+  const outData = canvas.toDataURL('image/png');
+  // show before (original full-res) and after (processed)
+  const beforeHtml = `<div style="flex:1"><strong>Before</strong><img class="preview" src="${base}" style="max-width:320px"/></div>`;
+  const afterHtml = `<div style="flex:1"><strong>After</strong><a class="home-btn" href="${outData}" download="no-bg.png" style="display:inline-block;margin-bottom:8px">Download</a><img class="preview" src="${outData}" style="max-width:320px"/></div>`;
+  br_ba.innerHTML = beforeHtml + afterHtml;
+  br_do.disabled=false; br_do.textContent='Remove Background';
+});
+</script></body></html>
