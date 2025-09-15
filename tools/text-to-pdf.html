@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Text to PDF - QuickTools Hub</title><meta name="description" content="Generate PDF from plain text"/><link rel="stylesheet" href="../css/style.css"/><link rel="icon" href="../assets/favicon.png"/></head><body><header class="header"><a class="brand" href="/"><span class="logo"></span><strong style="color:inherit">QuickTools Hub</strong></a><a class="home-btn" href="/">Home</a></header><main class="container">
+<div class="tool-area"><h1>Text → PDF</h1><p class="small">Paste text and download as PDF (client-side).</p>
+<textarea id="ttp_text" rows="12" style="width:100%;padding:8px;border-radius:8px"></textarea>
+<div style="margin-top:8px"><input id="ttp_title" class="kv" placeholder="Title (optional)"/> <button id="ttp_gen" class="home-btn">Generate PDF</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+document.getElementById('ttp_gen').addEventListener('click', ()=>{
+  const { jsPDF } = window.jspdf; const text=document.getElementById('ttp_text').value||''; const doc=new jsPDF(); const title=document.getElementById('ttp_title').value||'Document'; const lines=doc.splitTextToSize(text,180); doc.text(title,10,10); doc.text(lines,10,20); const blob=doc.output('blob'); downloadBlob(blob, title+'.pdf');
+});
+</script>
+</main><footer class="footer"><div>© 2025 QuickTools Hub</div></footer><script src="../js/common.js"></script></body></html>
